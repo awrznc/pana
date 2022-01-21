@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH[0, 0] = File.join(File.dirname(__FILE__), '..', 'lib')
+work_dir = File.join(File.dirname(__FILE__), '..', 'build')
+
+require 'pana'
+
+pana = Pana::Analyzer.new( target: ARGV[0], verbose: true )
+pana.clone_projects(work_dir)
+pana.analyze(work_dir)

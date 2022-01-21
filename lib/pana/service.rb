@@ -1,0 +1,1 @@
+require 'pana/service/github'
