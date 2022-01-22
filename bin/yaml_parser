@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+
+def print_most_commiter(yml)
+  yml.map do |key, value|
+    [key, value]
+  end.sort_by do |value|
+    value.last[:commit_count]
+  end.each do |value|
+    puts value.first
+  end
+end
+
+def print_most_change_value(yml)
+  sorted = yml.map do |key, value|
+    [key, value]
+  end.sort_by do |value|
+    value.last[:type].map do |type|
+      type.last[:add] + type.last[:delete]
+    end.sum
+  end
+  most_value = sorted[-1].last[:type].map do |type|
+    type.last[:add] + type.last[:delete]
+  end.sum
+  p most_value
+end
+
+def most_used_language(yml)
+  types = {}
+  sorted = yml.map do |key, value|
+    [key, value]
+  end.sort_by do |value|
+    value.last[:type].map do |type|
+      types[type.first] ||= 0
+      types[type.first] += 1
+    end.sum
+  end
+  result = types.map do |key, value|
+    [key, value]
+  end.sort_by do |value|
+    value.last
+  end
+  pp result
+end
+
+def main
+  yml = open('./build/result.yaml', 'r') { |file| YAML.load(file) }
+  print_most_commiter(yml)
+  print_most_change_value(yml)
+  most_used_language(yml)
+end
+
+main()
