@@ -84,29 +84,27 @@ module Pana
 
       users = Hash.new
       projects_path.each.with_index do |project, index|
+        @logger.info("[#{index+1}/#{projects_path.length}] Getting repository information. ( #{project.split('/').last} )")
+
         Git::shortlog(project).split("\n").map do |shortlog|
           user_info = shortlog.match(/^[^\d]+(\d+)\t(.+)\s<(.+@.+)>$/).to_a
           users[user_info.last] ||= { names: Array.new, commit_count: 0, type: { } }
+          users[user_info.last][:names].push(user_info[2]).sort!.uniq!
 
-          unless users[user_info.last][:names].include?(user_info[2]) then
-            users[user_info.last][:names].push(user_info[2])
-
-            Git::log(project, user_info[2]).split("\n").map do |log|
-              user_log_info = log.match(/^([^\s]+)\s+([^\s]+)[\s|\"]+([^(\s|\")]+).*$/).to_a
-              file_elements = user_log_info.last.split('.')
-              file_type = file_elements.length > 1 ? file_elements.last : 'other'
-              users[user_info.last][:type][file_type] ||= { add: 0, delete: 0 }
-              users[user_info.last][:type][file_type][:add] += user_log_info[1].to_i
-              users[user_info.last][:type][file_type][:delete] += user_log_info[2].to_i
-            end
+          Git::log(project, user_info[2]).split("\n").map do |log|
+            user_log_info = log.match(/^([^\s]+)\s+([^\s]+)[\s|\"]+([^(\s|\")]+).*$/).to_a
+            file_elements = user_log_info.last.split('.')
+            file_type = file_elements.length > 1 ? file_elements.last : 'other'
+            users[user_info.last][:type][file_type] ||= { add: 0, delete: 0 }
+            users[user_info.last][:type][file_type][:add] += user_log_info[1].to_i
+            users[user_info.last][:type][file_type][:delete] += user_log_info[2].to_i
           end
+
           users[user_info.last][:commit_count] += user_info[1].to_i
         end
-
-        @logger.info("[#{index+1}/#{projects_path.length}] got repository information. ( #{project.split('/').last} )")
       end
 
-      File.open("#{dir}/result.yaml", mode = "a") do |file|
+      File.open("#{dir}/result.yaml", mode = "w") do |file|
         file.write(users.to_yaml)
       end
     end
